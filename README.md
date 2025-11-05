@@ -4,7 +4,7 @@ Detecção e captura de fotos da face
 
 ### Requerimentos:
 
-- Baixar os arquivos de faceapi e modelos da pasta [/libs](https://github.com/multidecision/liveness-sdk-web/blob/master/libs)
+- Baixar os arquivos de faceapi e modelos da pasta [/libs](https://github.com/m77decision/liveness-sdk-web/blob/production/libs)
 
 ### Ambientes:
 
