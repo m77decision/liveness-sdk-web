@@ -142,7 +142,7 @@ var Liveness;
 
                                 // 2. Define o backend desejado e aguarda a prontidão do motor
                                 // Se config.useWebgl2 for falso, ele usará o padrão ou você pode forçar CPU aqui
-                                const backend = this.config.useWebgl2 ? 'webgl' : 'cpu';
+                                const backend = this.config.useWebgl2 ? 'wasm' : 'cpu';
                                 await window.faceapi.tf.setBackend(backend);
                                 await window.faceapi.tf.ready();
                                 
