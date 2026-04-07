@@ -9,7 +9,7 @@ var Liveness;
             this.requestType = "b64";
             this.counterNotFoundFace = 0;
             this.faceapi = null;
-            
+
             // Configurações Base
             this.token = options.token;
             this.videoWrapper = videoWrapper;
@@ -32,9 +32,7 @@ var Liveness;
             };
 
             // Configurações de Escala e Resolução
-            this.scalingFactorForLiveness = (options.scalingFactorForLiveness && options.scalingFactorForLiveness > 0 && options.scalingFactorForLiveness <= 3) 
-                ? options.scalingFactorForLiveness 
-                : 1;
+            this.scalingFactorForLiveness = (options.scalingFactorForLiveness && options.scalingFactorForLiveness <= 3) ? options.scalingFactorForLiveness : 1;
 
             this.config = {
                 ellipseMaskWidth: options.ellipseMaskWidth,
@@ -44,15 +42,14 @@ var Liveness;
                 mobileFacingMode: options.mobileFacingMode || "user",
                 width: options.width || this.getFullWidth(),
                 height: options.height || this.getFullHeight(),
-                useWebgl2: options.useWebgl2
+                useWebgl2: options.useWebgl2,
+                isDebug: options.isDebug
             };
 
-            // Proporção de Aspecto (4:3)
-            this.config.heightAspectRatio = this.isMobile() 
-                ? this.config.width * (4 / 3) 
-                : this.config.width / (4 / 3);
-
-            this.config.isDebug = options.isDebug;
+            // LÓGICA DE PROPORÇÃO DO SCRIPT MINIFICADO
+            this.config.heightAspectRatio = this.isMobile() ?
+                this.config.width * (4 / 3) :
+                this.config.width / (4 / 3);
 
             // Injeção de CSS para Orientação
             const style = document.createElement("style");
@@ -72,7 +69,7 @@ var Liveness;
             this.activatedEllipseStrokeStyle = options.activatedEllipseStrokeStyle || "#46E3C3";
             this.boxMessageBackgroundColor = options.boxMessageBackgroundColor || "#D02780";
             this.boxMessageTextColor = options.boxMessageTextColor || "#f3f3f5";
-            
+
             // Timers e Intervalos
             this.configEyesBoxHeight = options.configEyesBoxHeight || 20;
             this.requestAnimationFrame = window.requestAnimationFrame;
@@ -96,6 +93,19 @@ var Liveness;
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
+        responsiveFrameBoxEyesOutterWidth(width) {
+            // Valores exatos extraídos do seu script funcional
+            return width <= 315 ? {
+                eyesInner: 0.74,
+                eyesOutter: 0.78,
+                box: 0.55
+            } : {
+                eyesInner: 0.52,
+                eyesOutter: 0.82,
+                box: 0.6
+            };
+        }
+
         cssOrientationLock() {
             return "@media screen and (min-width: 320px) and (max-width: 767px) and (orientation: landscape) { html { transform: rotate(-90deg);transform-origin: left top;width: 100vh;overflow-x: hidden;position: absolute;top: 100%;left: 0;}}";
         }
@@ -114,29 +124,48 @@ var Liveness;
 
         // --- Configurações de Execução ---
 
-        setUseBase64() { this.requestType = "b64"; }
-        setUseFormData() { this.requestType = "formData"; }
-        setMinBrightness(val) { this.brightnessControl = val; }
-        setMinLuminance(val) { this.luminanceControl = val; }
-        setCheckNeutralFace(val) { this.shouldCheckNeutralFace = val; }
-        setEyesBoxHeight(val) { this.configEyesBoxHeight = val; }
-        
-        setMobileFaceCam() { 
-            this.config.mobileFacingMode = "user"; 
-            this.resetLiveness(); 
+        setUseBase64() {
+            this.requestType = "b64";
+        }
+        setUseFormData() {
+            this.requestType = "formData";
+        }
+        setMinBrightness(val) {
+            this.brightnessControl = val;
+        }
+        setMinLuminance(val) {
+            this.luminanceControl = val;
+        }
+        setCheckNeutralFace(val) {
+            this.shouldCheckNeutralFace = val;
+        }
+        setEyesBoxHeight(val) {
+            this.configEyesBoxHeight = val;
         }
 
-        setMobileEnvironmentCam() { 
-            this.config.mobileFacingMode = "environment"; 
-            this.resetLiveness(); 
+        setMobileFaceCam() {
+            this.config.mobileFacingMode = "user";
+            this.resetLiveness();
+        }
+
+        setMobileEnvironmentCam() {
+            this.config.mobileFacingMode = "environment";
+            this.resetLiveness();
         }
 
         setFrameBoxesWidth(inner, outter, box) {
-            this.configFrameBox = { eyesInner: inner, eyesOutter: outter, box: box };
+            this.configFrameBox = {
+                eyesInner: inner,
+                eyesOutter: outter,
+                box: box
+            };
         }
 
         setDimensionsRequestImage(w, h) {
-            this.config.dimensions = { width: w, height: h };
+            this.config.dimensions = {
+                width: w,
+                height: h
+            };
         }
 
         toggleDebug() {
@@ -197,13 +226,13 @@ var Liveness;
 
         async loadFaceApiModels() {
             try {
-                if(!!this.config.useWebgl2) {
+                if (!!this.config.useWebgl2) {
                     window.faceapi.tf.env().set('WEBGL_RENDER_FLOAT32_CAPABLE', false);
                     await window.faceapi.tf.setBackend('wasm');
                 }
-                
+
                 await window.faceapi.tf.ready();
-                
+
                 await Promise.all([
                     window.faceapi.nets.faceLandmark68Net.loadFromUri(this.faceapiPath),
                     window.faceapi.nets.faceExpressionNet.loadFromUri(this.faceapiPath),
@@ -239,7 +268,11 @@ var Liveness;
 
             navigator.mediaDevices.enumerateDevices().then(devices => {
                 const constraints = {
-                    video: { width: this.config.width, height: this.config.height, frameRate: 24 }
+                    video: {
+                        width: this.config.width,
+                        height: this.config.height,
+                        frameRate: 24
+                    }
                 };
                 if (this.isMobile()) {
                     constraints.video.facingMode = this.config.mobileFacingMode;
@@ -268,7 +301,7 @@ var Liveness;
             this.videoWrapper.style.position = "relative";
             this.videoWrapper.style.width = this.config.width + "px";
             this.videoWrapper.style.height = (this.config.height < this.config.heightAspectRatio) ? this.config.height + "px" : this.config.heightAspectRatio + "px";
-            
+
             this.video = document.createElement("video");
             this.video.ariaLabel = "Vídeo da face - Aproxime o rosto em posição de selfie e afaste-o lentamente para enquadrar";
             this.video.style.width = "inherit";
@@ -277,7 +310,7 @@ var Liveness;
             this.video.setAttribute("muted", true);
             this.video.setAttribute("autoplay", true);
             this.video.setAttribute("playsinline", "");
-            
+
             this.videoWrapper.append(this.video);
             this.video.addEventListener("play", () => {
                 this.loop();
@@ -291,7 +324,7 @@ var Liveness;
         createCanvasBackground() {
             this.canvasBackground = document.createElement("canvas");
             const dpr = window.devicePixelRatio || 2;
-            
+
             this.canvasBackground.width = this.isMobile() ? this.video.clientWidth * dpr : this.config.width;
             this.canvasBackground.height = this.isMobile() ? this.config.heightAspectRatio * dpr : this.config.height;
 
@@ -312,7 +345,9 @@ var Liveness;
             this.brightnessSum = 0;
             this.luminanceArray = [];
             for (let i = 0; i < data.length; i += 4) {
-                const r = data[i], g = data[i+1], b = data[i+2];
+                const r = data[i],
+                    g = data[i + 1],
+                    b = data[i + 2];
                 // Brilho
                 this.brightnessSum += Math.floor((r + g + b) / 3);
                 // Luminância
@@ -337,14 +372,20 @@ var Liveness;
             const ctx = this.canvasLuminance.getContext("2d");
             ctx.drawImage(this.video, 0, 0, this.canvasLuminance.width, this.canvasLuminance.height);
             const imageData = ctx.getImageData(0, 0, this.canvasLuminance.width, this.canvasLuminance.height);
-            
+
             this.sweepVideo(imageData.data);
             this.isBackgroundOK = this.brightness >= this.brightnessControl && this.luminance >= this.luminanceControl;
 
             if (this.config.isDebug) {
                 console.table({
-                    brilho: { atual: this.brightness, minimo: this.brightnessControl },
-                    luminancia: { atual: parseFloat(this.luminance.toFixed(2)), minimo: this.luminanceControl }
+                    brilho: {
+                        atual: this.brightness,
+                        minimo: this.brightnessControl
+                    },
+                    luminancia: {
+                        atual: parseFloat(this.luminance.toFixed(2)),
+                        minimo: this.luminanceControl
+                    }
                 });
             }
         }
@@ -355,159 +396,100 @@ var Liveness;
             this.blockMaskMessage = this.boxMessages.unmatchedFace;
             this.canvas = this.faceapi.createCanvasFromMedia(this.video);
             this.canvas.style.position = "absolute";
-            this.canvas.style.left = 0;
-            this.canvas.style.top = 0;
+            this.canvas.style.left = "0px";
+            this.canvas.style.top = "0px";
             this.videoWrapper.append(this.canvas);
 
             const displaySize = {
                 width: this.config.width,
-                height: (this.config.height < this.config.heightAspectRatio) ? this.config.height : this.config.heightAspectRatio
+                height: this.config.height < this.config.heightAspectRatio ? this.config.height : this.config.heightAspectRatio
             };
+
             this.faceapi.matchDimensions(this.canvas, displaySize);
+            this.boxesWidth = this.responsiveFrameBoxEyesOutterWidth(window.innerWidth);
+            if (this.configFrameBox) {
+                this.boxesWidth = this.configFrameBox;
+            }
 
-            // Definição das zonas de enquadramento
-            this.boxesWidth = this.isMobile() ? { eyesInner: 0.74, eyesOutter: 0.78, box: 0.55 } : { eyesInner: 0.52, eyesOutter: 0.82, box: 0.6 };
-            if (this.configFrameBox) this.boxesWidth = this.configFrameBox;
-
+            // CÁLCULO DO FRAMEBOX (O Retângulo de detecção)
             const frameBox = {
                 width: Math.floor(this.config.width * this.boxesWidth.box),
-                height: this.configFrameBox?.height || displaySize.height,
-                left: 0, top: 0
+                height: displaySize.height
             };
+
+            if (this.configFrameBox?.height) {
+                frameBox.height = this.configFrameBox.height;
+            }
+
             frameBox.left = Math.floor(this.canvas.width / 2 - frameBox.width / 2);
             frameBox.top = Math.floor(this.videoWrapper.clientHeight / 2 - frameBox.height / 2);
 
-            const outterBox = {
-                width: Math.floor(frameBox.width * this.boxesWidth.eyesOutter),
-                height: Math.floor((frameBox.height + this.configEyesBoxHeight) / 5),
-                left: 0, top: 0
-            };
-            outterBox.left = Math.floor(frameBox.left + frameBox.width / 1.95 - outterBox.width / 1.95);
-            outterBox.top = Math.floor(frameBox.top + 0.3 * frameBox.height);
+            // CÁLCULO DA ELIPSE (O Círculo visual) - IDÊNTICO AO MINIFICADO
+            this.ellipseMaskWidth = this.config.ellipseMaskWidth ?
+                frameBox.width / this.config.ellipseMaskWidth : frameBox.width / 2;
 
-            const innerBox = {
-                width: Math.floor(frameBox.width * this.boxesWidth.eyesInner),
-                height: Math.floor((frameBox.height + this.configEyesBoxHeight) / 5),
-                left: 0, top: 0
-            };
-            innerBox.left = Math.floor(frameBox.left + frameBox.width / 1.96 - innerBox.width / 1.96);
-            innerBox.top = Math.floor(frameBox.top + 0.3 * frameBox.height);
+            this.ellipseMaskHeight = this.config.ellipseMaskHeight ?
+                frameBox.height / this.config.ellipseMaskHeight : frameBox.height / 2.5;
 
-            // Mascara de Elipse
-            this.ellipseMaskWidth = this.config.ellipseMaskWidth ? frameBox.width / this.config.ellipseMaskWidth : frameBox.width / 2;
-            this.ellipseMaskHeight = this.config.ellipseMaskHeight ? frameBox.height / this.config.ellipseMaskHeight : frameBox.height / 2.5;
-            this.ellipseMaskTop = this.config.ellipseMaskTop ? (frameBox.top + frameBox.height) / this.config.ellipseMaskTop : (frameBox.top + frameBox.height) / 1.9;
-            this.ellipseMaskLeft = this.config.ellipseMaskLeft ? outterBox.left + outterBox.width / this.config.ellipseMaskLeft : outterBox.left + outterBox.width / 2;
+            this.ellipseMaskTop = this.config.ellipseMaskTop ?
+                (frameBox.top + frameBox.height) / this.config.ellipseMaskTop : (frameBox.top + frameBox.height) / 1.9;
+
+            this.ellipseMaskLeft = this.config.ellipseMaskLeft ?
+                (frameBox.left + frameBox.width / 2) / this.config.ellipseMaskLeft : frameBox.left + frameBox.width / 2;
+
             this.ellipseMaskLineWidth = 2;
 
-            this.createMessageBox();
             const ctx = this.canvas.getContext("2d");
             ctx.translate(this.canvas.width, 0);
             ctx.scale(-1, 1);
+
             this.drawEllipse(ctx);
 
-            if (!this.isMobile()) {
-                this.timerBackground = setInterval(() => this.checkBackground(), 1000);
-            } else {
-                this.isBackgroundOK = true;
-            }
-
-            const state = { counter: 0, inProgress: false, done: false };
-            const canvasRect = this.canvas.getBoundingClientRect();
+            const state = {
+                counter: 0,
+                inProgress: false,
+                done: false
+            };
+            const rect = this.canvas.getBoundingClientRect();
 
             this.timer = setInterval(async () => {
-                if (!navigator.onLine) return this.setHasNoNetwork();
                 if (state.inProgress || state.done) return;
-
                 state.inProgress = true;
-                const result = await this.faceapi.detectSingleFace(this.video, new this.faceapi.TinyFaceDetectorOptions({
+
+                const detection = await this.faceapi.detectSingleFace(this.video, new this.faceapi.TinyFaceDetectorOptions({
                     inputSize: 160,
                     scoreThreshold: 0.25
                 })).withFaceLandmarks().withFaceExpressions();
 
-                this.removeLoading();
-
-                if (this.showNotFoundModal && (this.counterNotFoundFace > (this.timeToDetectFace / this.facetimeInterval))) {
-                    this.toggleModalFaceNotFound();
-                }
-
-                if (!result) {
+                if (!detection) {
                     this.blockMaskMessage = this.boxMessages.unmatchedFace;
-                    this.blockMask(canvasRect, frameBox.left, frameBox.top, frameBox.height, frameBox.width);
-                    state.counter = 0;
+                    this.deactivateEllipseMask();
                     state.inProgress = false;
-                    this.counterNotFoundFace++;
                     return;
                 }
 
-                this.counterNotFoundFace = 0;
-                const resized = this.faceapi.resizeResults(result, displaySize);
+                const resized = this.faceapi.resizeResults(detection, displaySize);
 
-                // Validar Expressão
-                if (resized.expressions && this.shouldCheckNeutralFace) {
-                    const exp = this.getExpression(resized.expressions);
-                    if (exp !== "neutral") {
-                        this.blockMaskMessage = this.config.isDebug ? `${this.boxMessages.keepNeutralFace} >> ${exp}` : this.boxMessages.keepNeutralFace;
-                        this.blockMask(canvasRect, frameBox.left, frameBox.top, frameBox.height, frameBox.width);
-                        state.counter = 0; state.inProgress = false;
-                        return;
-                    }
-                }
+                // Validação de enquadramento (isInside) baseada no frameBox
+                const jaw = resized.landmarks.getJawOutline();
+                const leftPoint = [jaw[0].x, jaw[0].y];
+                const rightPoint = [jaw[16].x, jaw[16].y];
 
-                // Validar Pose
-                const pose = this.getPose(resized);
-                if (pose !== "front") {
-                    this.blockMaskMessage = this.config.isDebug ? `${this.boxMessages.centerYourFace} >> ${pose}` : this.boxMessages.centerYourFace;
-                    this.blockMask(canvasRect, frameBox.left, frameBox.top, frameBox.height, frameBox.width);
-                    state.counter = 0; state.inProgress = false;
-                    return;
-                }
+                const isInside = this.isInside(leftPoint, frameBox) && this.isInside(rightPoint, frameBox);
 
-                // Validar Rotação
-                const landmarks = resized.landmarks.getJawOutline();
-                if (this.isRotatedFace(landmarks[0], landmarks[16])) {
-                    this.blockMaskMessage = this.config.isDebug ? `${this.boxMessages.centerYourFace} >> rotacionado` : this.boxMessages.centerYourFace;
-                    this.blockMask(canvasRect, frameBox.left, frameBox.top, frameBox.height, frameBox.width);
-                    state.counter = 0; state.inProgress = false;
-                    return;
-                }
-
-                // Validar Posicionamento nos Frames
-                const jawLeft = [landmarks[0].x, landmarks[0].y];
-                const jawRight = [landmarks[16].x, landmarks[16].y];
-
-                const isInsideFrame = this.isInside(jawLeft, frameBox) && this.isInside(jawRight, frameBox);
-                const isInsideOutter = this.isInside(jawLeft, outterBox) && this.isInside(jawRight, outterBox);
-                const isInsideInner = this.isInside(jawLeft, innerBox) || this.isInside(jawRight, innerBox);
-
-                if (!this.isBackgroundOK) {
-                    this.blockMaskMessage = this.boxMessages.darkEnvironment;
-                } else if (!isInsideFrame) {
+                if (!isInside) {
                     this.blockMaskMessage = this.boxMessages.positionFaceWithinFrame;
-                } else if (!isInsideOutter) {
-                    this.blockMaskMessage = this.boxMessages.moveFaceAway;
-                } else if (isInsideInner) {
-                    this.blockMaskMessage = this.boxMessages.moveFaceCloser;
+                    this.deactivateEllipseMask();
                 } else {
-                    // Face Validada
-                    this.ellipseMaskLineWidth *= 2;
                     this.activateEllipseMask();
                     state.counter++;
-                    state.inProgress = false;
-                    
                     if (state.counter >= 2) {
                         state.done = true;
                         this.takePicture();
                         clearInterval(this.timer);
-                        if (this.timerBackground) clearInterval(this.timerBackground);
                     }
-                    return;
                 }
-
-                this.blockMask(canvasRect, frameBox.left, frameBox.top, frameBox.height, frameBox.width);
-                state.counter = 0;
                 state.inProgress = false;
-
             }, this.facetimeInterval);
         }
 
@@ -522,12 +504,15 @@ var Liveness;
         }
 
         activateEllipseMask() {
-            this.drawEllipse(this.canvas.getContext("2d"), this.activatedEllipseStrokeStyle);
+            const ctx = this.canvas.getContext("2d");
+            this.ellipseMaskLineWidth = 4;
+            this.drawEllipse(ctx, this.activatedEllipseStrokeStyle);
         }
 
         deactivateEllipseMask() {
-            this.ellipseMaskLineWidth = 3;
-            this.drawEllipse(this.canvas.getContext("2d"));
+            const ctx = this.canvas.getContext("2d");
+            this.ellipseMaskLineWidth = 2;
+            this.drawEllipse(ctx);
         }
 
         // --- Analise de Marcos Faciais ---
@@ -581,14 +566,14 @@ var Liveness;
             this.cachedBlockMaskMessage = this.blockMaskMessage;
             this.deactivateEllipseMask();
             this.msg.innerHTML = "";
-            
+
             const span = document.createElement("span");
             span.ariaLabel = this.blockMaskMessage;
             span.role = "alert";
             span.ariaLive = "assertive";
             span.textContent = this.blockMaskMessage;
             span.style = `display: flex; color: ${this.boxMessageTextColor}; font-size: 1.1rem; padding: 10px 20px; text-align: center; align-items: center; background: ${this.boxMessageBackgroundColor}; border-radius: 7px; justify-content: center; width: 230px; font-family: Prompt, sans-serif;`;
-            
+
             this.msg.style.display = "flex";
             this.msg.appendChild(span);
         }
@@ -597,10 +582,12 @@ var Liveness;
             const ctx = this.canvasBackground.getContext("2d");
             this.createFlashMask();
             ctx.drawImage(this.video, 0, 0, this.canvasBackground.width, this.canvasBackground.height);
-            
+
             // Pixels de Segurança/Controle
-            ctx.fillStyle = "rgb(71,84,68)"; ctx.fillRect(20, 50, 1, 1);
-            ctx.fillStyle = "rgb(211,190,124)"; ctx.fillRect(422, 522, 1, 1);
+            ctx.fillStyle = "rgb(71,84,68)";
+            ctx.fillRect(20, 50, 1, 1);
+            ctx.fillStyle = "rgb(211,190,124)";
+            ctx.fillRect(422, 522, 1, 1);
 
             this.base64 = this.canvasBackground.toDataURL("image/png");
             setTimeout(() => {
@@ -674,9 +661,15 @@ var Liveness;
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     const response = JSON.parse(xhr.response || "{}");
                     if (xhr.status === 200) {
-                        this.successCallback({ ...response, base64: this.base64 });
+                        this.successCallback({
+                            ...response,
+                            base64: this.base64
+                        });
                     } else {
-                        this.errorCallback({ error: response, base64: this.base64 });
+                        this.errorCallback({
+                            error: response,
+                            base64: this.base64
+                        });
                     }
                     this.resetLiveness();
                     this.removeLoading();
@@ -685,14 +678,20 @@ var Liveness;
 
             if (this.requestType === "b64") {
                 xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.send(JSON.stringify({ base64: { key: this.toB64() } }));
+                xhr.send(JSON.stringify({
+                    base64: {
+                        key: this.toB64()
+                    }
+                }));
             } else {
                 const fd = await this.toFormData();
                 xhr.send(fd);
             }
         }
 
-        toB64() { return this.base64.split(",")[1]; }
+        toB64() {
+            return this.base64.split(",")[1];
+        }
 
         async toFormData() {
             const res = await fetch(this.base64);
@@ -703,8 +702,14 @@ var Liveness;
         }
 
         confirmPicture() {
-            try { this.sendPictureByXmlRequest(); } 
-            catch (e) { this.errorCallback({ error: e, base64: this.base64 }); }
+            try {
+                this.sendPictureByXmlRequest();
+            } catch (e) {
+                this.errorCallback({
+                    error: e,
+                    base64: this.base64
+                });
+            }
         }
 
         // --- Métodos de UI Adicionais (Reconstruídos) ---
@@ -721,19 +726,22 @@ var Liveness;
             this.modalConfirmation = document.createElement("div");
             this.modalConfirmation.role = "alert";
             this.modalConfirmation.style = `padding: 7px; display: flex; width: ${this.videoWrapper.style.width}; height: ${this.videoWrapper.style.height}; background: white; border-radius: 7px; position: relative; align-items: center; justify-content: center;`;
-            
+
             const btnContainer = document.createElement("div");
             btnContainer.style = "right: 0; bottom: 0; z-index: 1; width: 100%; display: flex; padding: 10px 0; position: absolute; justify-content: center;";
-            
+
             const confirmBtn = document.createElement("button");
             confirmBtn.textContent = "Confirmar";
             confirmBtn.style = "color: #555; width: 160px; height: 50px; cursor: pointer; background: #fff; font-weight: 600; border-radius: 7px; margin-right: 10px; border: 1px solid #222;";
-            
+
             const cancelBtn = document.createElement("button");
             cancelBtn.textContent = "Cancelar";
             cancelBtn.style = "color: #444; width: 160px; height: 50px; cursor: pointer; background: #fff; font-weight: 600; border-radius: 7px; margin-right: 10px; border: 1px solid #222;";
-            
-            confirmBtn.addEventListener("click", () => { this.closePreviewModal(); this.confirmPicture(); });
+
+            confirmBtn.addEventListener("click", () => {
+                this.closePreviewModal();
+                this.confirmPicture();
+            });
             cancelBtn.addEventListener("click", () => this.cancelPicture());
 
             btnContainer.append(cancelBtn, confirmBtn);
@@ -755,7 +763,9 @@ var Liveness;
             if (el) el.remove();
         }
 
-        cancelPicture() { this.resetLiveness(); }
+        cancelPicture() {
+            this.resetLiveness();
+        }
 
         removeCanvas() {
             const canvas = document.getElementsByTagName("canvas")[0];
@@ -765,7 +775,7 @@ var Liveness;
         resetVideoWrapper() {
             if (this.videoWrapper) this.videoWrapper.innerHTML = "";
         }
-        
+
         setHasNoNetwork() {
             this.setLoading();
             const spinner = document.getElementById("spinner");
