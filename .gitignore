@@ -1,0 +1,25 @@
+# Dependências do Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Modelos de IA (Opcional)
+# Se os modelos forem muito grandes para o Git, você pode ignorá-los
+# e orientar outros devs a baixarem manualmente.
+# dist/models/
+
+# Arquivos do Sistema / IDE
+.vscode/
+.idea/
+.DS_Store
+thumbs.db
+
+# Logs e Temporários
+*.log
+tmp/
+.temp/
+
+# Ambiente (Tokens e Chaves)
+.env
+.env.local
