@@ -15,7 +15,7 @@ Detecção e captura de fotos da face
 
 1. Referenciar a bibioteca liveness-web na página
 
-`<script src="https://cdn.jsdelivr.net/gh/m77decision/liveness-sdk-web@<BRANCHE>/dist/liveness.js"></script>`
+`<script src="https://cdn.jsdelivr.net/gh/m77decision/liveness-sdk-web@<BRANCHE>/dist/js/liveness.js"></script>`
 
 2. Apontar a pasta que os modelos e o faceapi foram salvos em `configuration.faceapiPath`
 3. Definir qual elemento da DOM terá a câmera injetada pela biblioteca
