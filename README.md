@@ -57,23 +57,3 @@ Parar o uso da câmera:
 ```javascript
 liveness.stop();
 ```
-
-# Release notes
-
-### 1.0.0
-
-1. Ajuste envio de foto para API
-2. Adicionada a flag useWebgl2 que força o tensorflow a usar o WebAssembly(wasm)
-
-```javascript
-this.faceapi.tf.setBackend("wasm");
-this.faceapi.tf.ready();
-```
-
-### 1.0.1
-
-1. Ajuste para rodar em celulares mais antigos
-
-```javascript
-window.faceapi.tf.env().set('WEBGL_RENDER_FLOAT32_CAPABLE', false);
-```
