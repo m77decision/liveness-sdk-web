@@ -1,165 +1,222 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liveness Check</title>
+    <title>Validação Facial (Liveness)</title>
     <style>
         :root {
-            --cor-primaria: #26285e;
-            --cor-fundo: #1a1a1a;
-            --cor-secundaria: #46E3C3;
+            --primary-color: #D02780;
+            --primary-hover: #b01f6a;
+            --bg-color: #f4f4f9;
+            --text-color: #333;
         }
 
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        *::before, *::after { box-sizing: inherit; }
-
-        body, html {
-            width: 100%;
-            height: 100%;
-            background-color: var(--cor-fundo);
-            overflow: hidden;
-            font-family: sans-serif;
-        }
-
-        /* Wrapper em Grid para centralizar o vídeo */
-        #wrapper {
-            display: grid;
-            width: 100%;
-            height: 100%;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #liveness-viewport {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid #333;
-        }
-
-        /* Ajuste do Modal Conforme seu estilo */
-        #modalWrapper {
-            top: 50% !important;
-            left: 50% !important;
-            position: absolute !important;
-            transform: translate(-50%, -50%) !important;
-            z-index: 9999 !important; /* Garantir que fique acima de tudo */
-        }
-
-        .floating-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background-color: var(--cor-primaria);
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
-            align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 25px rgba(38, 40, 94, 0.4); /* Sombra suave no tom azul */
-            cursor: pointer;
-            border: none;
-            z-index: 1000;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        .floating-button:hover {
-            transform: scale(1.1);
-            filter: brightness(1.2);
-        }
-
-        .floating-button:active {
-            transform: scale(0.9);
-        }
-
-        .floating-button img {
-            width: 40px;
-            height: 40px;
-            filter: brightness(0) invert(1); /* Ícone branco para contraste no azul */
-            margin-left: 4px; /* Ajuste ótico para o triângulo do Play */
-        }
-
-        /* Texto de instrução */
-        #status-text {
-            position: absolute;
-            bottom: 20px;
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             width: 100%;
+            max-width: 760px; /* Suficiente para acomodar o desktop (720px) */
+            padding: 30px;
             text-align: center;
-            color: #fff;
-            text-shadow: 1px 1px 2px #000;
-            font-weight: bold;
-            z-index: 10;
-            pointer-events: none;
+        }
+
+        .card h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        .card p {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Container de vídeo */
+        #video-wrapper {
+            width: 100%;
+            margin: 0 auto 20px auto;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none; /* Escondido até clicar em iniciar */
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #result-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        #result-container img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <div id="wrapper">
-        <div id="liveness-viewport">
-            <div id="status-text"></div>
+    <div class="card">
+        <h1>Verificação de Identidade</h1>
+        <p id="instructions">Precisamos confirmar que é você. Certifique-se de estar em um local iluminado.</p>
+        
+        <div id="video-wrapper"></div>
+        
+        <button id="start-btn" class="btn">Iniciar Câmera</button>
+
+        <div id="result-container">
+            <h3 id="result-message"></h3>
+            <img id="result-image" alt="Selfie capturada" />
         </div>
     </div>
 
-    <button class="floating-button" id="start-trigger" title="Iniciar Câmera">
-        <img src="https://cdn-icons-png.flaticon.com/512/0/375.png" alt="Icon">
-    </button>
-
-    <script src="src/liveness.js"></script>
+    <script src="dist/liveness.js"></script>
 
     <script>
-        const viewport = document.getElementById('liveness-viewport');
-        const trigger = document.getElementById('start-trigger');
-        const status = document.getElementById('status-text');
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('start-btn');
+            const videoWrapper = document.getElementById('video-wrapper');
+            const instructions = document.getElementById('instructions');
+            const resultContainer = document.getElementById('result-container');
+            const resultMessage = document.getElementById('result-message');
+            const resultImage = document.getElementById('result-image');
 
-        const liveness = new Liveness(viewport, {
-            token: "SEU_TOKEN",
-            faceapiPath: "libs",
-            width: 640,
-            height: 480,
-            isShowPreview: true,
-            // Mantendo o círculo perfeito
-            ellipseMaskWidth: 2.5,
-            ellipseMaskHeight: 2.5,
-            ellipseStrokeStyle: "#26285e",           // Borda do círculo em azul
-            activatedEllipseStrokeStyle: "#46E3C3",  // Borda em verde ao detectar
-            boxMessageBackgroundColor: "#26285e",    // Fundo da mensagem em azul
-            boxMessageTextColor: "#ffffff",          // Texto em branco
-            
-            successCallback: (res) => {
-                status.innerText = "Captura realizada com sucesso!";
-                trigger.style.display = "flex"; // Botão volta se precisar repetir
-            },
-            errorCallback: (err) => {
-                status.innerText = "Erro. Tente novamente.";
-                trigger.style.display = "flex"; // Botão volta em caso de erro
-            }
-        });
+            // 1. Função que detecta se é Mobile
+            const isMobileDevice = () => {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            };
 
-        trigger.addEventListener('click', () => {
-            // Em vez de remover o botão, vamos apenas desativá-lo visualmente
-            // para que você saiba que ele ainda existe se algo der errado.
-            trigger.style.opacity = "0.3";
-            trigger.style.pointerEvents = "none";
-            
-            status.innerText = "Iniciando câmera e modelos...";
+            // 2. Configurações base compartilhadas
+            const getBaseOptions = () => ({
+                token: "SEU_TOKEN_AQUI", // Insira seu token válido
+                isDebug: true, // Mostra as marcações na tela
+                shouldCheckNeutralFace: false, // Define se exige rosto neutro
+                faceapiPath: 'libs',
+                isShowPreview: true,
+                // Callbacks de resposta
+                successCallback: (response) => {
+                    videoWrapper.style.display = 'none';
+                    resultContainer.style.display = 'block';
+                    resultMessage.style.color = "green";
+                    resultMessage.textContent = "Validação concluída com sucesso!";
+                    resultImage.src = response.base64;
+                    console.log("Sucesso:", response);
+                },
+                
+                errorCallback: (error) => {
+                    videoWrapper.style.display = 'none';
+                    resultContainer.style.display = 'block';
+                    resultMessage.style.color = "red";
+                    resultMessage.textContent = "Falha na validação. Tente novamente.";
+                    if(error.base64) resultImage.src = error.base64;
+                    console.error("Erro:", error);
+                    startBtn.style.display = 'inline-block';
+                    startBtn.textContent = 'Tentar Novamente';
+                    startBtn.disabled = false;
+                }
+            });
 
-            liveness.start(() => {
-                status.innerText = "Posicione o rosto dentro do círculo";
-                // Agora sim podemos sumir com ele para não atrapalhar o vídeo
-                trigger.style.display = "none";
+            // 3. Monta a configuração final baseada no dispositivo
+            const buildOptions = () => {
+                const baseOptions = getBaseOptions();
+                
+                if (isMobileDevice()) {
+                    console.log("📱 Configurando para ambiente Mobile");
+                    return {
+                        ...baseOptions,
+                        mobileFacingMode: "user",
+                        frameBox: {
+                            eyesInner: 0.62,
+                            eyesOutter: 1.1,
+                            box: 0.52,
+                        },
+                        ellipseMaskWidth: 2,
+                        ellipseMaskHeight: 3.8,
+                        ellipseMaskTop: 2.2,
+                        ellipseMaskLeft: 2
+                    };
+                } else {
+                    console.log("💻 Configurando para ambiente Desktop");
+                    return {
+                        ...baseOptions,
+                        width: 720,
+                        height: 720 / (4 / 3),
+                        frameBox: {
+                            eyesInner: 0.52,
+                            eyesOutter: 1.1,
+                            box: 0.5,
+                        }
+                    };
+                }
+            };
+
+            // 4. Ação do Botão Iniciar
+            startBtn.addEventListener('click', () => {
+                startBtn.disabled = true;
+                startBtn.textContent = 'Carregando câmera...';
+                startBtn.style.display = 'none'; // Esconde o botão após iniciar
+                
+                resultContainer.style.display = 'none';
+                videoWrapper.style.display = 'block'; // Mostra a caixa preta
+                instructions.textContent = "Siga as instruções na tela. Encaixe seu rosto na marcação.";
+
+                const options = buildOptions();
+
+                try {
+                    // Instancia a classe
+                    const liveness = new window.Liveness(videoWrapper, options);
+                    
+                    // Inicia o processo
+                    liveness.start(() => {
+                        console.log("Câmera e Liveness iniciados com sucesso!");
+                    });
+                } catch (e) {
+                    console.error("Erro ao instanciar Liveness:", e);
+                    alert("Ocorreu um erro ao carregar o script. Verifique o console.");
+                    startBtn.style.display = 'inline-block';
+                    startBtn.textContent = 'Iniciar Câmera';
+                    startBtn.disabled = false;
+                }
             });
         });
     </script>

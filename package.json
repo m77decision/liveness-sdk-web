@@ -2,24 +2,33 @@
   "name": "liveness-sdk-web",
   "version": "1.0.0",
   "description": "SDK de Prova de Vida (Liveness) utilizando Face-API.js e TensorFlow.js",
-  "main": "src/liveness.js",
+  "main": "dist/latest/liveness.min.js",
   "author": "Multidecision",
   "license": "ISC",
   "scripts": {
-    "init": "mkdir -p src dist dist/models",
-    "dev": "browser-sync start --server --files 'index.html, src/*.js' --port 3000",
-    "minify": "terser src/liveness.js -o dist/liveness.js --compress --mangle",
-    "build": "npm run minify && echo 'Build finalizado com sucesso em dist/liveness.js'"
+    "build": "webpack --env production",
+    "dev": "webpack"
   },
-  "devDependencies": {
-    "browser-sync": "^3.0.2",
-    "terser": "^5.31.0"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m77decision/liveness-sdk-web.git"
   },
+  "bugs": {
+    "url": "https://github.com/m77decision/liveness-sdk-web/issues"
+  },
+  "homepage": "https://github.com/m77decision/liveness-sdk-web#readme",
   "keywords": [
     "liveness",
     "biometria",
     "face-api",
     "tensorflow",
     "prova-de-vida"
-  ]
+  ],
+  "devDependencies": {
+    "browser-sync": "^3.0.4",
+    "browser-sync-webpack-plugin": "^2.4.0",
+    "terser-webpack-plugin": "^5.4.0",
+    "webpack": "^5.106.0",
+    "webpack-cli": "^7.0.2"
+  }
 }
