@@ -110,7 +110,7 @@
         </div>
     </div>
 
-    <script src="dist/liveness.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/m77decision/liveness-sdk-web/dist/v3/liveness.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -131,7 +131,7 @@
                 token: "SEU_TOKEN_AQUI", // Insira seu token válido
                 isDebug: true, // Mostra as marcações na tela
                 shouldCheckNeutralFace: false, // Define se exige rosto neutro
-                faceapiPath: 'libs',
+                faceapiPath: 'https://cdn.jsdelivr.net/gh/m77decision/liveness-sdk-web/libs/',
                 isShowPreview: true,
                 // Callbacks de resposta
                 successCallback: (response) => {
